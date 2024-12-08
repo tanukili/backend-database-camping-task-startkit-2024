@@ -181,24 +181,72 @@ values (
         -- 2. 預約時間`booking_at` 設為2024-11-24 16:00:00
         -- 3. 狀態`status` 設定為即將授課
 
+insert into "COURSE_BOOKING" (user_id,course_id, booking_at, created_at, status) values
+((select id from "USER" where email = 'wXlTq@hexschooltest.io'),
+	(select id from "COURSE" where id = 1),
+	'2024-11-24 16:00:00',
+    '2024-11-24 16:00:00',
+	'status'),
+((select id from "USER" where email = 'richman@hexschooltest.io'),
+	(select id from "COURSE" where id = 1),
+	'2024-11-24 16:00:00',
+    '2024-11-24 16:00:00',
+	'status');
+
 -- 5-2. 修改：`王小明`取消預約 `李燕容` 的課程，請在`COURSE_BOOKING`更新該筆預約資料：
     -- 1. 取消預約時間`cancelled_at` 設為2024-11-24 17:00:00
     -- 2. 狀態`status` 設定為課程已取消
+
+update "COURSE_BOOKING" 
+set cancelled_at = '2024-11-24 17:00:00', status = 'cancelled'
+where user_id = (select id from "USER" where email = 'wXlTq@hexschooltest.io');
 
 -- 5-3. 新增：`王小明`再次預約 `李燕容`   的課程，請在`COURSE_BOOKING`新增一筆資料：
     -- 1. 預約人設為`王小明`
     -- 2. 預約時間`booking_at` 設為2024-11-24 17:10:25
     -- 3. 狀態`status` 設定為即將授課
 
+insert into "COURSE_BOOKING" (user_id,course_id, booking_at, status) values
+((select id from "USER" where email = 'wXlTq@hexschooltest.io'),
+	(select id from "COURSE" where id = 1),
+	'2024-11-24 17:10:25',
+	'status');
+
 -- 5-4. 查詢：取得王小明所有的預約紀錄，包含取消預約的紀錄
+
+select * from "COURSE_BOOKING" cb 
+inner join "USER" u on cb.user_id = u.id
+where u.email = 'wXlTq@hexschooltest.io';
 
 -- 5-5. 修改：`王小明` 現在已經加入直播室了，請在`COURSE_BOOKING`更新該筆預約資料（請注意，不要更新到已經取消的紀錄）：
     -- 1. 請在該筆預約記錄他的加入直播室時間 `join_at` 設為2024-11-25 14:01:59
     -- 2. 狀態`status` 設定為上課中
 
+update "COURSE_BOOKING" 
+set join_at = '2024-11-25 14:01:59', status = 'join'
+where course_id = 1 and
+	status = 'status' and
+	user_id = (select id from "USER" where email = 'wXlTq@hexschooltest.io');
+
 -- 5-6. 查詢：計算用戶王小明的購買堂數，顯示須包含以下欄位： user_id , total。 (需使用到 SUM 函式與 Group By)
 
+select 
+	cp.user_id,
+	SUM(cp.purchased_credits) as total
+from "CREDIT_PURCHASE" cp
+inner join "USER" u on cp.user_id = u.id
+where u.email = 'wXlTq@hexschooltest.io'
+group by user_id;
+
 -- 5-7. 查詢：計算用戶王小明的已使用堂數，顯示須包含以下欄位： user_id , total。 (需使用到 Count 函式與 Group By)
+
+select 
+	cb.user_id,
+	count(*) as total 
+from "COURSE_BOOKING" cb 
+inner join "USER" u on cb.user_id = u.id
+where u.email = 'wXlTq@hexschooltest.io' and cb.status not in ('cancelled')
+group by user_id;
 
 -- 5-8. [挑戰題] 查詢：請在一次查詢中，計算用戶王小明的剩餘可用堂數，顯示須包含以下欄位： user_id , remaining_credit
     -- 提示：
@@ -207,6 +255,28 @@ values (
     -- inner join ( 用戶王小明的已使用堂數) as "COURSE_BOOKING"
     -- on "COURSE_BOOKING".user_id = "CREDIT_PURCHASE".user_id;
 
+select
+	"CREDIT_PURCHASE".user_id,
+	"CREDIT_PURCHASE".total - "COURSE_BOOKING".total as remaining_credit
+from (
+	select 
+		cp.user_id,
+		SUM(cp.purchased_credits) as total
+	from "CREDIT_PURCHASE" cp
+	inner join "USER" u on cp.user_id = u.id
+	where u.email = 'wXlTq@hexschooltest.io'
+	group by user_id
+	) as "CREDIT_PURCHASE"
+inner join (
+	select 
+		cb.user_id,
+		count(*) as total 
+	from "COURSE_BOOKING" cb 
+	inner join "USER" u on cb.user_id = u.id
+	where u.email = 'wXlTq@hexschooltest.io' and cb.status not in ('cancelled')
+	group by user_id
+	) as "COURSE_BOOKING"
+	on "COURSE_BOOKING".user_id = "CREDIT_PURCHASE".user_id;
 
 -- ████████  █████   █     ███  
 --   █ █   ██    █  █     █     
