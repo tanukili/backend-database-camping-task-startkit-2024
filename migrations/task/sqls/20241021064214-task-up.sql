@@ -233,7 +233,28 @@ group by user_id;
     -- from ( 用戶王小明的購買堂數 ) as "CREDIT_PURCHASE"
     -- inner join ( 用戶王小明的已使用堂數) as "COURSE_BOOKING"
     -- on "COURSE_BOOKING".user_id = "CREDIT_PURCHASE".user_id;
-
+select
+	"CREDIT_PURCHASE".user_id,
+	"CREDIT_PURCHASE".total - "COURSE_BOOKING".total as remaining_credit
+from (
+	select 
+		cp.user_id,
+		SUM(cp.purchased_credits) as total
+	from "CREDIT_PURCHASE" cp
+	inner join "USER" u on cp.user_id = u.id
+	where u.email = 'wXlTq@hexschooltest.io'
+	group by user_id
+	) as "CREDIT_PURCHASE"
+inner join (
+	select 
+		cb.user_id,
+		count(*) as total 
+	from "COURSE_BOOKING" cb 
+	inner join "USER" u on cb.user_id = u.id
+	where u.email = 'wXlTq@hexschooltest.io' and cb.status not in ('cancelled')
+	group by user_id
+	) as "COURSE_BOOKING"
+	on "COURSE_BOOKING".user_id = "CREDIT_PURCHASE".user_id;
 
 -- ████████  █████   █     ███  
 --   █ █   ██    █  █     █     
@@ -290,5 +311,5 @@ where purchase_at between '2024-11-01 00:00:00.000' and '2024-11-30 23:59:59.999
 select
 	count(*) as 預約會員人數
 from "COURSE_BOOKING" cb 
-where (created_at between '2024-12-01 00:00:00.000' and '2024-12-30 23:59:59.999') and 
+where (created_at between '2024-11-01 00:00:00.000' and '2024-11-30 23:59:59.999') and 
 	(status not in ('cancelled'));
