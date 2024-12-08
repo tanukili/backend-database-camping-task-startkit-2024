@@ -210,8 +210,22 @@ where course_id = 1 and
 	user_id = (select id from "USER" where email = 'wXlTq@hexschooltest.io');
 
 -- 5-6. 查詢：計算用戶王小明的購買堂數，顯示須包含以下欄位： user_id , total。 (需使用到 SUM 函式與 Group By)
+select 
+	cp.user_id,
+	SUM(cp.purchased_credits) as total
+from "CREDIT_PURCHASE" cp
+inner join "USER" u on cp.user_id = u.id
+where u.email = 'wXlTq@hexschooltest.io'
+group by user_id;
 
 -- 5-7. 查詢：計算用戶王小明的已使用堂數，顯示須包含以下欄位： user_id , total。 (需使用到 Count 函式與 Group By)
+select 
+	cb.user_id,
+	count(*) as total 
+from "COURSE_BOOKING" cb 
+inner join "USER" u on cb.user_id = u.id
+where u.email = 'wXlTq@hexschooltest.io' and cb.status not in ('cancelled')
+group by user_id;
 
 -- 5-8. [挑戰題] 查詢：請在一次查詢中，計算用戶王小明的剩餘可用堂數，顯示須包含以下欄位： user_id , remaining_credit
     -- 提示：
@@ -230,15 +244,51 @@ where course_id = 1 and
 -- 6. 後台報表
 -- 6-1 查詢：查詢專長為重訓的教練，並按經驗年數排序，由資深到資淺（需使用 inner join 與 order by 語法)
 -- 顯示須包含以下欄位： 教練名稱 , 經驗年數, 專長名稱
+select 
+	(select name from "USER" where id = c.user_id) as 教練名稱,
+	c.experience_years as 經驗年數,
+	(select name from "SKILL" s where name = '重訓') as 專長名稱
+from "COACH" c
+inner join "COACH_LINK_SKILL" cls on c.id = cls.coach_id
+where cls.skill_id = (select id from "SKILL" s where name = '重訓')
+order by experience_years desc;
 
 -- 6-2 查詢：查詢每種專長的教練數量，並只列出教練數量最多的專長（需使用 group by, inner join 與 order by 與 limit 語法）
 -- 顯示須包含以下欄位： 專長名稱, coach_total
+select 
+	(select name from "SKILL" where id = cls.skill_id) as 專長名稱,
+	count(*) as coach_total
+from "COACH_LINK_SKILL" cls
+group by cls.skill_id
+order by coach_total desc limit 1;
+/* 使用 inner join 的寫法 */
+select 
+	s.name as 專長名稱,
+	count(*) as coach_total
+from "COACH_LINK_SKILL" cls
+inner join "SKILL" s on cls.skill_id = s.id
+group by s.id
+order by coach_total desc limit 1;
 
 -- 6-3. 查詢：計算 11 月份組合包方案的銷售數量
 -- 顯示須包含以下欄位： 組合包方案名稱, 銷售數量
+select
+	(select name from "CREDIT_PACKAGE" cp2 where cp2.id = cp.credit_package_id) as 組合包方案名稱,
+	count(*) as 銷售數量 
+from "CREDIT_PURCHASE" cp
+group by credit_package_id;
 
 -- 6-4. 查詢：計算 11 月份總營收（使用 purchase_at 欄位統計）
 -- 顯示須包含以下欄位： 總營收
+select
+	sum(price_paid) as 總營收
+from "CREDIT_PURCHASE"
+where purchase_at between '2024-11-01 00:00:00.000' and '2024-11-30 23:59:59.999';
 
 -- 6-5. 查詢：計算 11 月份有預約課程的會員人數（需使用 Distinct，並用 created_at 和 status 欄位統計）
 -- 顯示須包含以下欄位： 預約會員人數
+select
+	count(*) as 預約會員人數
+from "COURSE_BOOKING" cb 
+where (created_at between '2024-12-01 00:00:00.000' and '2024-12-30 23:59:59.999') and 
+	(status not in ('cancelled'));
