@@ -110,15 +110,13 @@ inner join "SKILL" s on
 -- 3-3 修改：更新教練的經驗年數，資料需求如下：
     -- 1. 教練`肌肉棒子` 的經驗年數為3年
     -- 2. 教練`Q太郎` 的經驗年數為5年
-update "COACH" c
+update "COACH"
 set experience_years = 3
-from "USER" u
-where c.user_id = u.id and u.email = 'muscle@hexschooltest.io';
+where user_id = (select id from "USER" where email = 'muscle@hexschooltest.io');
 
 update "COACH" c
 set experience_years = 5
-from "USER" u
-where c.user_id = u.id and u.email = 'starplatinum@hexschooltest.io';
+where user_id = (select id from "USER" where email = 'starplatinum@hexschooltest.io');
 
 -- 3-4 刪除：新增一個專長 空中瑜伽 至 SKILL 資料表，之後刪除此專長。
 insert into "SKILL" (name) values ('空中瑜伽');
@@ -311,7 +309,7 @@ where purchase_at between '2024-11-01 00:00:00.000' and '2024-11-30 23:59:59.999
 -- 6-5. 查詢：計算 11 月份有預約課程的會員人數（需使用 Distinct，並用 created_at 和 status 欄位統計）
 -- 顯示須包含以下欄位： 預約會員人數
 select
-    count(distinct cb.user_id) as 預約會員人數
-from "COURSE_BOOKING" cb
-where cb.created_at between '2024-11-01 00:00:00' and '2024-11-30 23:59:59'
-    and cb.status not in ('cancelled');
+    count(distinct user_id) as 預約會員人數
+from "COURSE_BOOKING"
+where created_at between '2024-11-01 00:00:00' and '2024-11-30 23:59:59' and
+    status not in ('cancelled');
